@@ -11,19 +11,19 @@ import (
 	"sync"
 )
 
-type employee struct {
+type articles struct {
 	Name string `json:"name"`
 	Age  int    `json:"age"`
 }
 
-type e1 []employee
+type e1 []articles
 
 var (
 	mutex sync.Mutex
 	s1    e1
 )
 
-func update(s4 e1, s3 employee, a int, w http.ResponseWriter) {
+func update(s4 e1, s3 articles, a int, w http.ResponseWriter) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	for index, articles := range s1 {
@@ -46,22 +46,22 @@ func handlerequests() {
 	myrouter := mux.NewRouter().StrictSlash(true)
 
 	myrouter.HandleFunc("/", homepage)
-	myrouter.HandleFunc("/fetch", fetchemployee)
-	myrouter.HandleFunc("/add", addemployee).Methods("POST")
-	myrouter.HandleFunc("/search/{age}", returnsingleemployee)
-	myrouter.HandleFunc("/delete/{age}", deleteemployee)
-	myrouter.HandleFunc("/update/{age}", updateemployee).Methods("PUT")
+	myrouter.HandleFunc("/fetch", fetcharticles)
+	myrouter.HandleFunc("/add", addarticles).Methods("POST")
+	myrouter.HandleFunc("/search/{age}", returnsinglearticles)
+	myrouter.HandleFunc("/delete/{age}", deletearticles)
+	myrouter.HandleFunc("/update/{age}", updatearticles).Methods("PUT")
 
 	log.Fatal(http.ListenAndServe(":8081", myrouter))
 
 }
-func fetchemployee(w http.ResponseWriter, r *http.Request) {
+func fetcharticles(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(s1)
 	fmt.Println("endpoint hi Homepage")
 
 }
-func returnsingleemployee(w http.ResponseWriter, r *http.Request) {
+func returnsinglearticles(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["age"]
 	a, _ := strconv.Atoi(key)
@@ -75,16 +75,16 @@ func returnsingleemployee(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Fprintf(w, "Key: "+key)
 }
-func addemployee(w http.ResponseWriter, r *http.Request) {
+func addarticles(w http.ResponseWriter, r *http.Request) {
 	Str, _ := ioutil.ReadAll(r.Body)
-	var s2 employee
+	var s2 articles
 	json.Unmarshal(Str, &s2)
 	s1 = append(s1, s2)
 	fmt.Println(s1)
 	json.NewEncoder(w).Encode(s2)
 
 }
-func deleteemployee(w http.ResponseWriter, r *http.Request) {
+func deletearticles(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["age"]
 	a, _ := strconv.Atoi(key)
@@ -100,20 +100,20 @@ func deleteemployee(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-func updateemployee(w http.ResponseWriter, r *http.Request) {
+func updatearticles(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["age"]
 	a, _ := strconv.Atoi(key)
 	str, _ := ioutil.ReadAll(r.Body)
-	var s3 employee
+	var s3 articles
 	var s4 e1
 	json.Unmarshal(str, &s3)
 	update(s4, s3, a, w)
 }
 func main() {
 	s1 = e1{
-		employee{Name: "ayushi", Age: 20},
-		employee{Name: "ayush", Age: 10},
+		articles{Name: "ayushi", Age: 20},
+		articles{Name: "ayush", Age: 10},
 	}
 	handlerequests()
 }
