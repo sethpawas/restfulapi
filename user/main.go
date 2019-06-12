@@ -1,8 +1,8 @@
 package main
 
 import (
-	"/home/pawas/goapi/handlers"
 	"fmt"
+	"goapi/handlers"
 	"net/http"
 	"os"
 )

@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-) //mux allow us easily help us to retrieve path and query parameters
+	"sync"
+)
+
+//mux allow us easily help us to retrieve path and query parameters
 
 type Article struct {
 	Id      string `json:"Id"`
@@ -19,18 +22,37 @@ type Article struct {
 //used to get populated later in main function from database
 type Articles []Article
 
-var a1 Articles
+//var a1 Articles
+
+var (
+	mutex sync.Mutex
+	s1    Articles
+)
+
+func update(s4 Articles, s3 Article, a string, w http.ResponseWriter) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	for index, articl := range s1 {
+		if articl.Id == a {
+			s4 = append(s1[:index], s3)
+			//json.NewEncoder(w).Encode(s4v)
+			s4 = append(s4, s1[index+1:]...)
+		}
+	}
+
+	json.NewEncoder(w).Encode(s4)
+}
 
 func returnAllArticles(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Endpoint hit: return all articles")
-	json.NewEncoder(w).Encode(a1) //does the encoding our articles array into a JSON string and then writing as partr of our response
+	json.NewEncoder(w).Encode(s1) //does the encoding our articles array into a JSON string and then writing as partr of our response
 }
 
 func returnSingleArticle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["id"]
 
-	for _, article := range a1 {
+	for _, article := range s1 {
 		if article.Id == key {
 			json.NewEncoder(w).Encode(article)
 		}
@@ -46,7 +68,7 @@ func createNewArticle(w http.ResponseWriter, r *http.Request) {
 	var a2 Article
 	json.Unmarshal(reqBody, &a2)
 	//update the global array
-	a1 = append(a1, a2)
+	s1 = append(s1, a2)
 
 	json.NewEncoder(w).Encode(a2)
 }
@@ -57,11 +79,22 @@ func deleteArticle(w http.ResponseWriter, r *http.Request) {
 	//extract the id need to delete
 	id := vars["id"]
 
-	for index, article := range a1 {
+	for index, article := range s1 {
 		if article.Id == id {
-			a1 = append(a1[:index], a1[index+1:]...)
+			s1 = append(s1[:index], s1[index+1:]...)
 		}
 	}
+}
+
+func updateArticle(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["id"]
+	a := key
+	str, _ := ioutil.ReadAll(r.Body)
+	var s3 Article
+	var s4 Articles
+	json.Unmarshal(str, &s3)
+	update(s4, s3, a, w)
 }
 
 //handle all requests to our root URL
@@ -83,6 +116,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/articles", returnAllArticles)
 	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
 	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
+	myRouter.HandleFunc("/update/{id}", updateArticle).Methods("PUT")
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
 
 	//we will pass the newly instance instead of nil
@@ -92,7 +126,7 @@ func handleRequests() {
 //kickoff our API
 func main() {
 	fmt.Println("Rest API v2.0 - Mux Routers")
-	a1 = Articles{
+	s1 = Articles{
 		Article{Id: "1", Title: "Hello", Desc: "Description details", Content: "Content Description"},
 		Article{Id: "2", Title: "Hello 2", Desc: "Description details", Content: "Content Description"},
 	}
