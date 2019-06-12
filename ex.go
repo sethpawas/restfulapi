@@ -51,6 +51,19 @@ func createNewArticle(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(a2)
 }
 
+func deleteArticle(w http.ResponseWriter, r *http.Request) {
+	//parse the path parameters
+	vars := mux.Vars(r)
+	//extract the id need to delete
+	id := vars["id"]
+
+	for index, article := range a1 {
+		if article.Id == id {
+			a1 = append(a1[:index], a1[index+1:]...)
+		}
+	}
+}
+
 //handle all requests to our root URL
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome to the Homepage")
@@ -69,6 +82,7 @@ func handleRequests() {
 	//map any call to /articles
 	myRouter.HandleFunc("/articles", returnAllArticles)
 	myRouter.HandleFunc("/article", createNewArticle).Methods("POST")
+	myRouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
 	myRouter.HandleFunc("/article/{id}", returnSingleArticle)
 
 	//we will pass the newly instance instead of nil
